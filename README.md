@@ -25,3 +25,5 @@ https://www.youtube.com/watch?v=UjsQFNN0nSA
 See https://github.com/RLBot/RLBotPythonExample/wiki for documentation and tutorials.
 
 Gametick packet - https://github.com/RLBot/RLBotPythonExample/wiki/Input-and-Output-Data
+
+Utilities directory is a repository built by Sam Mish: https://samuelpmish.github.io/ 
