@@ -8,11 +8,12 @@ from Utilities.LinearAlgebra import vec3, dot, euler_rotation
 from Utilities.Simulation import Ball, Car
 from Utilities.LinearAlgebra import vec3
 from Util import *
-from Decision import *
+from States import *
 import numpy as np
 import time
 import math
-
+from rlbot.utils.game_state_util import GameState, BallState, CarState
+from GameStateTesting import *
 
 class obj:
     def __init__(self):
@@ -36,17 +37,23 @@ class kicksent(BaseAgent):
         self.ball = obj()
         self.players = []
         self.start = time.time()
-        self.state = testing()
+        self.state = shot()
         self.ball_prediction = None
+        self.game_state = GameState()
+        self.ball_state = BallState()
+        self.car_state = CarState()
+        self.test_num = 1 #set to 0 for no testing
+        self.test_start = time.time()
         
 
 
     def get_output(self, packet: GameTickPacket) -> SimpleControllerState:
-        #render ball prediction line
-        self.render_ball_line_prediction(packet)
         #preprocess the data from the packet
         self.preprocess(packet)
-        
+        #run test scenario, set self.test_num to 0 for no test scenarios
+        self.test_state(self.test_num)
+        #render ball prediction line
+        self.render_ball_line_prediction(packet)
         return self.state.execute(self)
 
 
@@ -113,5 +120,14 @@ class kicksent(BaseAgent):
         self.renderer.end_rendering()
 
 
+    def test_state(self, test_num):
+        options = { 
+            0 : live_no_test,
+            1 : kickoff_test
+        }
+        options[test_num](self)
+ 
+
+    
 
 

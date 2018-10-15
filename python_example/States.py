@@ -3,6 +3,12 @@ from Util import *
 import time
 from rlbot.agents.base_agent import BaseAgent, SimpleControllerState
 
+class doNothing:
+    def __init__(self):
+        self.expired = False
+    def execute(self, agent):
+        controller_state = SimpleControllerState()
+        return(controller_state)
 
 class exampleATBA:
     def __init__(self):
@@ -167,19 +173,12 @@ class fly:
 
 
         
-''' future classes in order of need
-class land_on_wheels:
-class kickoff:
-class flick:
-class dribble:
 
-
-'''
         
         
 
         
-class testing:
+class testing_aerial:
     def __init__(self):
         self.expired = False
     def execute(self, agent):
@@ -250,3 +249,22 @@ class testing:
 
         return controller_state
 
+
+
+class kickoff:
+    def __init__(self):
+        self.expired = False
+    def execute(self, agent):
+        controller_state = SimpleControllerState()
+        agent.start = time.time()
+        controller_state.boost = True
+
+
+        return(controller_state)
+
+
+''' future classes in order of need
+class land_on_wheels:
+class flick:
+class dribble:
+'''
