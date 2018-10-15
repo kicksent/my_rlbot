@@ -1,36 +1,77 @@
-import math
-import numpy as np
+
+
 
 from rlbot.agents.base_agent import BaseAgent, SimpleControllerState
 from rlbot.utils.structures.game_data_struct import GameTickPacket
+#from Utilities.Simulation import *
+from Utilities.LinearAlgebra import vec3, dot, euler_rotation
+from Utilities.Simulation import Ball, Car
+from Utilities.LinearAlgebra import vec3
+from Util import *
+from Decision import *
+import numpy as np
+import time
+import math
 
+
+class obj:
+    def __init__(self):
+        self.location = np.array([0,0,0])
+        self.velocity = np.array([0,0,0])
+        self.rotation = np.array([0,0,0]) # pitch, yaw, roll
+        self.rvelocity = np.array([0,0,0]) 
+        self.local_location = np.array([0,0,0])
+        self.boost = 0
+        self.matrix = None
+        self.wheel_contact = False
+        self.jumped = False
+        self.double_jumped = False
 
 class kicksent(BaseAgent):
 
     def initialize_agent(self):
         # This runs once before the bot starts up
         self.controller_state = SimpleControllerState()
+        self.me = obj()
+        self.ball = obj()
+        self.players = []
+        self.start = time.time()
+        self.state = testing()
+        self.ball_prediction = None
         
+
 
     def get_output(self, packet: GameTickPacket) -> SimpleControllerState:
+        #render ball prediction line
+        self.render_ball_line_prediction(packet)
+        #preprocess the data from the packet
+        self.preprocess(packet)
         
-        return self.controller_state
+        return self.state.execute(self)
+
 
     def preprocess(self,game):
+        #car data processing
         self.players = []
         car = game.game_cars[self.index]
-        self.me.location.data = [car.physics.location.x, car.physics.location.y, car.physics.location.z]
-        self.me.velocity.data = [car.physics.velocity.x, car.physics.velocity.y, car.physics.velocity.z]
-        self.me.rotation.data = [car.physics.rotation.pitch, car.physics.rotation.yaw, car.physics.rotation.roll]
-        self.me.rvelocity.data = [car.physics.angular_velocity.x, car.physics.angular_velocity.y, car.physics.angular_velocity.z]
-        self.me.matrix = rotator_to_matrix(self.me)
+        self.me.location = np.array([car.physics.location.x, car.physics.location.y, car.physics.location.z])
+        self.me.velocity = np.array([car.physics.velocity.x, car.physics.velocity.y, car.physics.velocity.z])
+        self.me.rotation = np.array([car.physics.rotation.pitch, car.physics.rotation.yaw, car.physics.rotation.roll])
+        self.me.rvelocity = np.array([car.physics.angular_velocity.x, car.physics.angular_velocity.y, car.physics.angular_velocity.z])
+        self.me.matrix = get_orientation_matrix(self.me)
         self.me.boost = car.boost
+        self.me.wheel_contact = car.has_wheel_contact
+        self.me.jumped = car.jumped
+        self.me.double_jumped = car.double_jumped
+
+        #ball data processing
         ball = game.game_ball.physics
-        self.ball.location.data = [ball.location.x, ball.location.y, ball.location.z]
-        self.ball.velocity.data = [ball.velocity.x, ball.velocity.y, ball.velocity.z]
-        self.ball.rotation.data = [ball.rotation.pitch, ball.rotation.yaw, ball.rotation.roll]
-        self.ball.rvelocity.data = [ball.angular_velocity.x, ball.angular_velocity.y, ball.angular_velocity.z]
-        self.ball.local_location = to_local(self.ball,self.me)
+        self.ball.location = np.array([ball.location.x, ball.location.y, ball.location.z])
+        self.ball.velocity = np.array([ball.velocity.x, ball.velocity.y, ball.velocity.z])
+        self.ball.rotation = np.array([ball.rotation.pitch, ball.rotation.yaw, ball.rotation.roll])
+        self.ball.rvelocity = np.array([ball.angular_velocity.x, ball.angular_velocity.y, ball.angular_velocity.z])
+
+        self.ball.local_location = to_local(self.ball, self.me)
 
         #collects info for all other cars in match, updates objects in self.players accordingly
         for i in range(game.num_cars):
@@ -39,10 +80,10 @@ class kicksent(BaseAgent):
                 temp = obj()
                 temp.index = i
                 temp.team = car.team
-                temp.location.data = [car.physics.location.x, car.physics.location.y, car.physics.location.z]
-                temp.velocity.data = [car.physics.velocity.x, car.physics.velocity.y, car.physics.velocity.z]
-                temp.rotation.data = [car.physics.rotation.pitch, car.physics.rotation.yaw, car.physics.rotation.roll]
-                temp.rvelocity.data = [car.physics.angular_velocity.x, car.physics.angular_velocity.y, car.physics.angular_velocity.z]
+                temp.location.data = np.array([car.physics.location.x, car.physics.location.y, car.physics.location.z])
+                temp.velocity.data = np.array([car.physics.velocity.x, car.physics.velocity.y, car.physics.velocity.z])
+                temp.rotation.data = np.array([car.physics.rotation.pitch, car.physics.rotation.yaw, car.physics.rotation.roll])
+                temp.rvelocity.data = np.array([car.physics.angular_velocity.x, car.physics.angular_velocity.y, car.physics.angular_velocity.z])
                 temp.boost = car.boost
                 flag = False
                 for item in self.players:
@@ -53,26 +94,24 @@ class kicksent(BaseAgent):
                 if not flag:
                     self.players.append(temp)
 
+    def render_ball_line_prediction(self, packet):
+        ''' Get ball predictions '''
+        self.ball_prediction = self.get_ball_prediction_struct()
 
-class state(self):
-    def __init__(self):
-        self.active = True
+        # if ball_prediction is not None:
+        #     for i in range(0, ball_prediction.num_slices):
+        #         prediction_slice = ball_prediction.slices[i]
+        #         self.logger.info("At time {}, the ball will be at ({}, {}, {})".
+        #             format(prediction_slice.game_seconds, prediction_slice.physics.location.x, prediction_slice.physics.location.y, prediction_slice.physics.location.z))
+        '''Render Line Prediction'''
+        self.renderer.begin_rendering()
+        for i in range(200):
+            self.renderer.draw_line_3d(
+                [self.ball_prediction.slices[i].physics.location.x, self.ball_prediction.slices[i].physics.location.y, self.ball_prediction.slices[i].physics.location.z], 
+                [self.ball_prediction.slices[i+1].physics.location.x, self.ball_prediction.slices[i+1].physics.location.y, self.ball_prediction.slices[i+1].physics.location.z], 
+                self.renderer.create_color(255,255,0,255))
+        self.renderer.end_rendering()
 
-    def get_orientation_matrix(self, roll, pitch, yaw):
-        CR = np.cos(roll)
-        SR = np.sin(roll)
-        CP = np.cos(pitch)
-        SP = np.sin(pitch)
-        CY = np.cos(yaw)
-        SY = np.sin(yaw)
 
-        v1 = [CP*CY, CP * SY, SP]
-        v2 = [CY * SP * SR - CR * SY, SY * SP * SR + CR * CY, -CP * SR]
-        v3 = [-CR * CY * SP - SR * SY, -CR * SY * SP + SR * CY, CP * CR]
-
-        matrix = np.matrix(v1, v2, v3)
-        print(matrix)
-
-        return matrix
 
 
