@@ -179,7 +179,7 @@ class dribble:
         
 
         
-class nothing:
+class testing:
     def __init__(self):
         self.expired = False
     def execute(self, agent):
