@@ -27,9 +27,9 @@ class exampleATBA:
 
         #steering
         if angle_to_ball > .1:
-            controller_state.steer = controller_state.yaw = 1
+            controller_state.steer = controller_state.yaw = 1 * steer(agent)
         elif angle_to_ball < -.1:
-            controller_state.steer = controller_state.yaw = -1
+            controller_state.steer = controller_state.yaw = -1 * steer(agent)
         else:
             controller_state.steer = controller_state.yaw = 0
         #throttle
@@ -41,19 +41,19 @@ class exampleATBA:
             controller_state.throttle = 0
 
         #dodging
-        time_difference = time.time() - agent.start
-        if time_difference > 2.2 and distance2D(agent.ball.location, agent.me.location) > 1000 and abs(angle_to_ball) < 1.3:
-            agent.start = time.time()
-        elif time_difference <= .1:
-            controller_state.jump = True
-            controller_state.pitch = -1
-        elif time_difference > .1 and time_difference < .15:
-            controller_state.jump = False
-            controller_state.pitch = -1
-        elif time_difference > .15 and time_difference < 1:
-            controller_state.jump = True
-            controller_state.yaw = controller_state.steer
-            controller_state.pitch = -1
+        # time_difference = time.time() - agent.start
+        # if time_difference > 2.2 and distance2D(agent.ball.location, agent.me.location) > 1000 and abs(angle_to_ball) < 1.3:
+        #     agent.start = time.time()
+        # elif time_difference <= .1:
+        #     controller_state.jump = True
+        #     controller_state.pitch = -1
+        # elif time_difference > .1 and time_difference < .15:
+        #     controller_state.jump = False
+        #     controller_state.pitch = -1
+        # elif time_difference > .15 and time_difference < 1:
+        #     controller_state.jump = True
+        #     controller_state.yaw = controller_state.steer
+        #     controller_state.pitch = -1
         return controller_state
 
 class shot:
@@ -178,7 +178,7 @@ class fly:
         
 
         
-class testing_aerial:
+class aerialATBA:
     def __init__(self):
         self.expired = False
     def execute(self, agent):
@@ -199,18 +199,19 @@ class testing_aerial:
         [1] is the pitch component
         [2] is the yaw'''
         #steering
+        print(rotation_axis)
         if agent.me.wheel_contact == True: #ground
             if rotation_axis[2] > 0.1:
-                controller_state.steer = 1
+                controller_state.steer = 1 * steer(agent)
             elif rotation_axis[2] < 0.1:
-                controller_state.steer = -1
+                controller_state.steer = -1 * steer(agent)
             else:
                 controller_state.steer =  0
         else:                             #aerial
-            if rotation_axis[2] > 0:
-                controller_state.steer = controller_state.yaw = .5
-            elif rotation_axis[2] < 0:
-                controller_state.steer = controller_state.yaw = -.5
+            if rotation_axis[2] > .1:
+                controller_state.steer = controller_state.yaw = 1 * steer(agent)
+            elif rotation_axis[2] < .1:
+                controller_state.steer = controller_state.yaw = -1 * steer(agent)
             else:
                 controller_state.steer = controller_state.yaw = 0
 
@@ -229,19 +230,17 @@ class testing_aerial:
         if agent.me.wheel_contact == True and agent.ball.local_location[2] > 300:
             controller_state.jump = True
         else:
-            if rotation_axis[1] < 0:
-                controller_state.pitch = .4
-                controller_state.boost = flutter_boost(.3)
-            elif rotation_axis[1] > 0:
-                controller_state.pitch = -.4
-                controller_state.boost = flutter_boost(.3)
+            if rotation_axis[1] < .05:
+                controller_state.pitch = 1 * steer(agent)
+            elif rotation_axis[1] > .05:
+                controller_state.pitch = -1 * steer(agent)
             else:
                 controller_state.pitch = 0
         
         if agent.me.rotation[2] < 0:
-            controller_state.roll = 1
+            controller_state.roll = 1 * steer(agent)
         elif agent.me.rotation[2] > 0:
-            controller_state.roll = -1
+            controller_state.roll = -1 * steer(agent)
         else:
             controller_state.roll = 0
         
@@ -259,6 +258,21 @@ class kickoff:
         agent.start = time.time()
         controller_state.boost = True
 
+        normed_vector = normalize_vector(agent.ball.local_location)
+        rotation_axis = np.cross(np.array([1, 0, 0]), normed_vector)
+        dist = distance3D(agent.ball, agent.me)
+        #print(steer(dist))
+        #steering
+        if rotation_axis[2] > .1:
+            controller_state.steer = controller_state.yaw = 1 * steer(agent)
+            controller_state.boost = False
+        elif rotation_axis[2] < -.1:
+            controller_state.steer = controller_state.yaw = -1 * steer(agent)
+            controller_state.boost = False
+        else:
+            controller_state.steer = controller_state.yaw = 0
+            controller_state.boost = True
+        
 
         return(controller_state)
 

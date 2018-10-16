@@ -44,16 +44,29 @@ class kicksent(BaseAgent):
         self.car_state = CarState()
         self.test_num = 1 #set to 0 for no testing
         self.test_start = time.time()
+        self.time_to_target = 1 #use this to update renderer
+    
+    def test_state(self, test_num):
+        options = { 
+            0 : live_no_test,
+            1 : kickoff_test,
+            2 : ATBA_test,
+            3 : aerialATBA_test
+        }
+        options[test_num](self)
         
-
 
     def get_output(self, packet: GameTickPacket) -> SimpleControllerState:
         #preprocess the data from the packet
         self.preprocess(packet)
         #run test scenario, set self.test_num to 0 for no test scenarios
         self.test_state(self.test_num)
-        #render ball prediction line
-        self.render_ball_line_prediction(packet)
+        #render, must be called between begin and end, only call once each!
+        self.renderer.begin_rendering()
+        self.render_ball_line_prediction()
+        self.render_target_location()
+        self.renderer.end_rendering()
+
         return self.state.execute(self)
 
 
@@ -101,7 +114,7 @@ class kicksent(BaseAgent):
                 if not flag:
                     self.players.append(temp)
 
-    def render_ball_line_prediction(self, packet):
+    def render_ball_line_prediction(self):
         ''' Get ball predictions '''
         self.ball_prediction = self.get_ball_prediction_struct()
 
@@ -111,21 +124,102 @@ class kicksent(BaseAgent):
         #         self.logger.info("At time {}, the ball will be at ({}, {}, {})".
         #             format(prediction_slice.game_seconds, prediction_slice.physics.location.x, prediction_slice.physics.location.y, prediction_slice.physics.location.z))
         '''Render Line Prediction'''
-        self.renderer.begin_rendering()
+        
         for i in range(200):
             self.renderer.draw_line_3d(
-                [self.ball_prediction.slices[i].physics.location.x, self.ball_prediction.slices[i].physics.location.y, self.ball_prediction.slices[i].physics.location.z], 
-                [self.ball_prediction.slices[i+1].physics.location.x, self.ball_prediction.slices[i+1].physics.location.y, self.ball_prediction.slices[i+1].physics.location.z], 
+                [self.ball_prediction.slices[i].physics.location.x, 
+                self.ball_prediction.slices[i].physics.location.y, 
+                self.ball_prediction.slices[i].physics.location.z], 
+                [self.ball_prediction.slices[i+1].physics.location.x, 
+                self.ball_prediction.slices[i+1].physics.location.y, 
+                self.ball_prediction.slices[i+1].physics.location.z], 
                 self.renderer.create_color(255,255,0,255))
-        self.renderer.end_rendering()
+                
+        
+
+    def render_target_location(self):
+        # if(time > 3):
+        #     return
+        # else:
+        i = int(np.floor(self.time_to_target * 60))
+        #print("i = ", i)
+        if(i >= 360):
+            print("You cannot create a target more than 3 seconds in the future.")
+            return
+        line_length = 50
+        alpha = 255
+        r=255
+        g=0
+        b=0
+        self.renderer.draw_line_3d(
+            [self.ball_prediction.slices[i].physics.location.x+line_length, 
+            self.ball_prediction.slices[i].physics.location.y, 
+            self.ball_prediction.slices[i].physics.location.z], 
+            [self.ball_prediction.slices[i].physics.location.x-line_length, 
+            self.ball_prediction.slices[i].physics.location.y, 
+            self.ball_prediction.slices[i].physics.location.z], 
+                self.renderer.create_color(alpha,r,g,b))
+        self.renderer.draw_line_3d(
+            [self.ball_prediction.slices[i].physics.location.x, 
+            self.ball_prediction.slices[i].physics.location.y+line_length, 
+            self.ball_prediction.slices[i].physics.location.z], 
+            [self.ball_prediction.slices[i].physics.location.x, 
+            self.ball_prediction.slices[i].physics.location.y-line_length, 
+            self.ball_prediction.slices[i].physics.location.z], 
+            self.renderer.create_color(alpha,r,g,b))
+        self.renderer.draw_line_3d(
+            [self.ball_prediction.slices[i].physics.location.x, 
+            self.ball_prediction.slices[i].physics.location.y, 
+            self.ball_prediction.slices[i].physics.location.z+line_length], 
+            [self.ball_prediction.slices[i].physics.location.x, 
+            self.ball_prediction.slices[i].physics.location.y, 
+            self.ball_prediction.slices[i].physics.location.z-line_length], 
+            self.renderer.create_color(alpha,r,g,b))
+        self.renderer.draw_line_3d(
+            [self.ball_prediction.slices[i].physics.location.x+line_length, 
+            self.ball_prediction.slices[i].physics.location.y+line_length, 
+            self.ball_prediction.slices[i].physics.location.z], 
+            [self.ball_prediction.slices[i].physics.location.x-line_length, 
+            self.ball_prediction.slices[i].physics.location.y-line_length, 
+            self.ball_prediction.slices[i].physics.location.z], 
+            self.renderer.create_color(alpha,r,g,b))
+        self.renderer.draw_line_3d(
+            [self.ball_prediction.slices[i].physics.location.x, 
+            self.ball_prediction.slices[i].physics.location.y+line_length, 
+            self.ball_prediction.slices[i].physics.location.z+line_length], 
+            [self.ball_prediction.slices[i].physics.location.x, 
+            self.ball_prediction.slices[i].physics.location.y-line_length, 
+            self.ball_prediction.slices[i].physics.location.z-line_length], 
+            self.renderer.create_color(alpha,r,g,b))
+        self.renderer.draw_line_3d(
+            [self.ball_prediction.slices[i].physics.location.x+line_length, 
+            self.ball_prediction.slices[i].physics.location.y, 
+            self.ball_prediction.slices[i].physics.location.z+line_length], 
+            [self.ball_prediction.slices[i].physics.location.x-line_length, 
+            self.ball_prediction.slices[i].physics.location.y, 
+            self.ball_prediction.slices[i].physics.location.z-line_length], 
+            self.renderer.create_color(alpha,r,g,b))
+        
 
 
-    def test_state(self, test_num):
-        options = { 
-            0 : live_no_test,
-            1 : kickoff_test
-        }
-        options[test_num](self)
+
+
+
+
+
+        # d = 10 #dimension of rect 
+        # self.renderer.draw_rect_3d(
+        #     translate_points3D([self.ball_prediction.slices[i].physics.location.x, 
+        #         self.ball_prediction.slices[i].physics.location.y, 
+        #         self.ball_prediction.slices[i].physics.location.z], self, -d/2, 0, d/2), 
+        #     d, d, True, self.renderer.black())
+        
+            
+        
+
+
+
+    
  
 
     

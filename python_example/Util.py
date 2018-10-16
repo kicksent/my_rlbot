@@ -7,6 +7,12 @@ GOAL_WIDTH = 1900
 FIELD_LENGTH = 10280
 FIELD_WIDTH = 8240
 
+
+
+
+
+
+
 ''' takes in a car object, and returns an proper orthogonal orientation matrix 
     [[fx, lx, ux]
     [fy, ly, uy]
@@ -96,14 +102,45 @@ def sign(x):
 
 def angle_to_radians(angle):
     return(np.pi/180)
-    
-# def steer(distance, angle):
-
-# def yaw():
 
 def rand_boost():
     return(np.random.randint(2, dtype='bool'))
 
 def flutter_boost(percent_prob):
     return(True if np.random.binomial(1, percent_prob) else False)
+
+def steer(agent):
+    distance = distance3D(agent.ball, agent.me)
+    angle = angle2D(agent.ball, agent.me)
+    if distance > 1000 and np.abs(angle) > angle_to_radians(45):
+        return 1
+    elif distance > 500:
+        return .5
+    elif distance > 400:
+        return .4
+    elif distance > 300:
+        return .3
+    elif distance > 200:
+        return .15
+    else:
+        return .1
+
+
+# ''' used to translate points before giving to renderer '''
+# def translate_points3D(array, agent, vx, vy, vz):
+#     a = np.append(array, 1)
+#     mat = np.matrix([
+#         [1, 0, 0, vx],
+#         [0, 1, 0, vy],
+#         [0, 0, 1, vz],
+#         [0, 0, 0, 1]
+#     ])
+#     res = (mat * a.reshape(4,1)).A1
+#     return [res[0], res[1], res[2]]
+    
+
+
+
+    
+
     
