@@ -27,6 +27,7 @@ class obj:
         self.wheel_contact = False
         self.jumped = False
         self.double_jumped = False
+        self.acceleration = np.array([0,0,0])
 
 class kicksent(BaseAgent):
 
@@ -75,7 +76,9 @@ class kicksent(BaseAgent):
         self.players = []
         car = game.game_cars[self.index]
         self.me.location = np.array([car.physics.location.x, car.physics.location.y, car.physics.location.z])
+        prev_velocity = self.me.velocity
         self.me.velocity = np.array([car.physics.velocity.x, car.physics.velocity.y, car.physics.velocity.z])
+        self.me.acceleration = (self.me.velocity - prev_velocity) / (1/60)
         self.me.rotation = np.array([car.physics.rotation.pitch, car.physics.rotation.yaw, car.physics.rotation.roll])
         self.me.rvelocity = np.array([car.physics.angular_velocity.x, car.physics.angular_velocity.y, car.physics.angular_velocity.z])
         self.me.matrix = get_orientation_matrix(self.me)
@@ -87,7 +90,9 @@ class kicksent(BaseAgent):
         #ball data processing
         ball = game.game_ball.physics
         self.ball.location = np.array([ball.location.x, ball.location.y, ball.location.z])
+        prev_velocity = self.ball.velocity
         self.ball.velocity = np.array([ball.velocity.x, ball.velocity.y, ball.velocity.z])
+        self.ball.acceleration = (self.ball.velocity - prev_velocity) / (1/60)
         self.ball.rotation = np.array([ball.rotation.pitch, ball.rotation.yaw, ball.rotation.roll])
         self.ball.rvelocity = np.array([ball.angular_velocity.x, ball.angular_velocity.y, ball.angular_velocity.z])
 
@@ -97,13 +102,13 @@ class kicksent(BaseAgent):
         for i in range(game.num_cars):
             if i != self.index:
                 car = game.game_cars[i]
-                temp = obj()
+                self.players[i] = obj()
                 temp.index = i
                 temp.team = car.team
-                temp.location.data = np.array([car.physics.location.x, car.physics.location.y, car.physics.location.z])
-                temp.velocity.data = np.array([car.physics.velocity.x, car.physics.velocity.y, car.physics.velocity.z])
-                temp.rotation.data = np.array([car.physics.rotation.pitch, car.physics.rotation.yaw, car.physics.rotation.roll])
-                temp.rvelocity.data = np.array([car.physics.angular_velocity.x, car.physics.angular_velocity.y, car.physics.angular_velocity.z])
+                temp.location = np.array([car.physics.location.x, car.physics.location.y, car.physics.location.z])
+                temp.velocity = np.array([car.physics.velocity.x, car.physics.velocity.y, car.physics.velocity.z])
+                temp.rotation = np.array([car.physics.rotation.pitch, car.physics.rotation.yaw, car.physics.rotation.roll])
+                temp.rvelocity = np.array([car.physics.angular_velocity.x, car.physics.angular_velocity.y, car.physics.angular_velocity.z])
                 temp.boost = car.boost
                 flag = False
                 for item in self.players:
