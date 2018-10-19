@@ -14,6 +14,7 @@ import time
 import math
 from rlbot.utils.game_state_util import GameState, BallState, CarState
 from GameStateTesting import *
+from CarPredictor import *
 
 class obj:
     def __init__(self):
@@ -37,22 +38,27 @@ class kicksent(BaseAgent):
         self.me = obj()
         self.ball = obj()
         self.players = []
+        self.time = time.time()
         self.start = time.time()
         self.state = shot()
         self.ball_prediction = None
+        self.car_predictor = CarPredictor()
+        self.time_to_target = 1 #use this to update renderer
+        self.target_prediction_frame = 0
         self.game_state = GameState()
         self.ball_state = BallState()
         self.car_state = CarState()
-        self.test_num = 1 #set to 0 for no testing
+        self.test_num = 4 #set to 0 for no testing
         self.test_start = time.time()
-        self.time_to_target = 1 #use this to update renderer
+        
     
     def test_state(self, test_num):
         options = { 
             0 : live_no_test,
             1 : kickoff_test,
-            2 : ATBA_test,
-            3 : aerialATBA_test
+            2 : atba_test,
+            3 : aerialATBA_test,
+            4 : boost_and_turn_test
         }
         options[test_num](self)
         
@@ -65,6 +71,7 @@ class kicksent(BaseAgent):
         #render, must be called between begin and end, only call once each!
         self.renderer.begin_rendering()
         self.render_ball_line_prediction()
+        self.render_car_prediction()
         self.render_target_location()
         self.renderer.end_rendering()
 
@@ -78,7 +85,7 @@ class kicksent(BaseAgent):
         self.me.location = np.array([car.physics.location.x, car.physics.location.y, car.physics.location.z])
         prev_velocity = self.me.velocity
         self.me.velocity = np.array([car.physics.velocity.x, car.physics.velocity.y, car.physics.velocity.z])
-        self.me.acceleration = (self.me.velocity - prev_velocity) / (1/60)
+        self.me.acceleration = (self.me.velocity - prev_velocity ) * 60
         self.me.rotation = np.array([car.physics.rotation.pitch, car.physics.rotation.yaw, car.physics.rotation.roll])
         self.me.rvelocity = np.array([car.physics.angular_velocity.x, car.physics.angular_velocity.y, car.physics.angular_velocity.z])
         self.me.matrix = get_orientation_matrix(self.me)
@@ -92,7 +99,7 @@ class kicksent(BaseAgent):
         self.ball.location = np.array([ball.location.x, ball.location.y, ball.location.z])
         prev_velocity = self.ball.velocity
         self.ball.velocity = np.array([ball.velocity.x, ball.velocity.y, ball.velocity.z])
-        self.ball.acceleration = (self.ball.velocity - prev_velocity) / (1/60)
+        self.ball.acceleration = self.ball.velocity - prev_velocity
         self.ball.rotation = np.array([ball.rotation.pitch, ball.rotation.yaw, ball.rotation.roll])
         self.ball.rvelocity = np.array([ball.angular_velocity.x, ball.angular_velocity.y, ball.angular_velocity.z])
 
@@ -102,7 +109,7 @@ class kicksent(BaseAgent):
         for i in range(game.num_cars):
             if i != self.index:
                 car = game.game_cars[i]
-                self.players[i] = obj()
+                temp = obj()
                 temp.index = i
                 temp.team = car.team
                 temp.location = np.array([car.physics.location.x, car.physics.location.y, car.physics.location.z])
@@ -122,7 +129,7 @@ class kicksent(BaseAgent):
     def render_ball_line_prediction(self):
         ''' Get ball predictions '''
         self.ball_prediction = self.get_ball_prediction_struct()
-
+        
         # if ball_prediction is not None:
         #     for i in range(0, ball_prediction.num_slices):
         #         prediction_slice = ball_prediction.slices[i]
@@ -138,15 +145,35 @@ class kicksent(BaseAgent):
                 [self.ball_prediction.slices[i+1].physics.location.x, 
                 self.ball_prediction.slices[i+1].physics.location.y, 
                 self.ball_prediction.slices[i+1].physics.location.z], 
-                self.renderer.create_color(255,255,0,255))
+                self.renderer.create_color(255,255,0,255)
+                )
                 
+
+    
+    def render_car_prediction(self):
+        time_length = 1
+        predictions = self.car_predictor.get_car_prediction(self, time_length)
+        for i in range(time_length*60 - 1):
+            #print(type(self.car_predictions[i]))
+            self.renderer.draw_line_3d(
+                predictions[i].position.tolist(), 
+                predictions[i+1].position.tolist(),
+                self.renderer.create_color(255,0,0,255)
+                
+            )
+            print(i, np.linalg.norm(predictions[i].velocity))
+            
+            
         
+        
+
 
     def render_target_location(self):
         # if(time > 3):
         #     return
         # else:
         i = int(np.floor(self.time_to_target * 60))
+        self.target_prediction_frame = i
         #print("i = ", i)
         if(i >= 360):
             print("You cannot create a target more than 3 seconds in the future.")
@@ -206,7 +233,7 @@ class kicksent(BaseAgent):
             self.renderer.create_color(alpha,r,g,b))
         
 
-
+    
 
 
 

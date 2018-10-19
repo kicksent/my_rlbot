@@ -10,7 +10,7 @@ class doNothing:
         controller_state = SimpleControllerState()
         return(controller_state)
 
-class exampleATBA:
+class atba:
     def __init__(self):
         self.expired = False
     def execute(self, agent):
@@ -22,27 +22,23 @@ class exampleATBA:
     def exampleController(self, agent, target_speed):
         controller_state = SimpleControllerState()
 
-        angle_to_ball = np.arctan2(agent.ball.local_location[1], agent.ball.local_location[0]) #breaks
+        angle_to_ball = np.arctan2(agent.ball.local_location[1], agent.ball.local_location[0])
         current_speed = velocity2D(agent.me)
-
         #steering
-        if angle_to_ball > .1:
-            controller_state.steer = controller_state.yaw = 1 * steer(agent)
-        elif angle_to_ball < -.1:
-            controller_state.steer = controller_state.yaw = -1 * steer(agent)
-        else:
-            controller_state.steer = controller_state.yaw = 0
+        
+        controller_state.steer = controller_state.yaw = clamp(angle_to_ball*2.5, -1, 1)
         #throttle
         if(target_speed > current_speed):
             controller_state.throttle = 1
-            if(target_speed > 1400 and agent.start > 2.2 and current_speed < 2250): #there might be a problem here with self.start for boosting check later
+            if(target_speed > 1400 and agent.start > 2.2 and current_speed < 2250 and np.abs(angle_to_ball) < .3): #there might be a problem here with self.start for boosting check later
                 controller_state.boost = True
         elif target_speed < current_speed:
             controller_state.throttle = 0
+            controller_state.boost = 0
 
         #dodging
         # time_difference = time.time() - agent.start
-        # if time_difference > 2.2 and distance2D(agent.ball.location, agent.me.location) > 1000 and abs(angle_to_ball) < 1.3:
+        # if time_difference > 2.2 and distance2D(agent.ball.location, agent.me.location) > 2000 and abs(angle_to_ball) < 1.3:
         #     agent.start = time.time()
         # elif time_difference <= .1:
         #     controller_state.jump = True
@@ -193,32 +189,36 @@ class aerialATBA:
         normed_vector = normalize_vector(agent.ball.local_location)
         #print(normed_vector)
         rotation_axis = np.cross(np.array([1, 0, 0]), normed_vector) 
+        angle_to_ball = np.arctan2(agent.ball.local_location[1], agent.ball.local_location[0])
         current_speed = velocity2D(agent.me)
         '''rotation_axis
-        [0] is the roll component
+        [0] is the roll component, which is always 0 here
         [1] is the pitch component
         [2] is the yaw'''
+
+
         #steering
-        print(rotation_axis)
         if agent.me.wheel_contact == True: #ground
             if rotation_axis[2] > 0.1:
-                controller_state.steer = 1 * steer(agent)
+                controller_state.steer = 1 
             elif rotation_axis[2] < 0.1:
-                controller_state.steer = -1 * steer(agent)
+                controller_state.steer = -1
             else:
                 controller_state.steer =  0
         else:                             #aerial
-            if rotation_axis[2] > .1:
-                controller_state.steer = controller_state.yaw = 1 * steer(agent)
-            elif rotation_axis[2] < .1:
-                controller_state.steer = controller_state.yaw = -1 * steer(agent)
+            if angle_to_ball > .1:
+                #controller_state.steer = controller_state.yaw = clamp(rotation_axis[2]*2.5, -1, 1)
+                controller_state.steer = controller_state.yaw = clamp(angle_to_ball, -1, 1)
+            elif angle_to_ball < -.1:
+                #controller_state.steer = controller_state.yaw = clamp(rotation_axis[2]*2.5, -1, 1)
+                controller_state.steer = controller_state.yaw = clamp(angle_to_ball, -1, 1)
             else:
                 controller_state.steer = controller_state.yaw = 0
 
         #throttle
         if(target_speed > current_speed):
             controller_state.throttle = 1
-            if(target_speed > 1400 and agent.start > 2.2 and current_speed < 2250): #there might be a problem here with self.start for boosting check later
+            if(target_speed > 1400 and agent.start > 2.2 and current_speed < 1400): #there might be a problem here with self.start for boosting check later
                 controller_state.boost = True
         elif target_speed < current_speed:
             controller_state.throttle = 0
@@ -227,20 +227,22 @@ class aerialATBA:
 
 
         
-        if agent.me.wheel_contact == True and agent.ball.local_location[2] > 300:
+        if agent.me.wheel_contact == True and distance2D(agent.ball, agent.me) < 1000:
+            print(distance2D(agent.ball, agent.me))
             controller_state.jump = True
         else:
-            if rotation_axis[1] < .05:
-                controller_state.pitch = 1 * steer(agent)
-            elif rotation_axis[1] > .05:
-                controller_state.pitch = -1 * steer(agent)
+            controller_state.boost = True
+            if rotation_axis[1] < -.1:
+                controller_state.pitch = clamp(-angle_to_ball, -1, 1)
+            elif rotation_axis[1] > .1:
+                controller_state.pitch = clamp(-angle_to_ball, -1, 1)
             else:
                 controller_state.pitch = 0
         
         if agent.me.rotation[2] < 0:
-            controller_state.roll = 1 * steer(agent)
+            controller_state.roll = .1
         elif agent.me.rotation[2] > 0:
-            controller_state.roll = -1 * steer(agent)
+            controller_state.roll = -.1
         else:
             controller_state.roll = 0
         
@@ -282,3 +284,21 @@ class land_on_wheels:
 class flick:
 class dribble:
 '''
+
+class boost_and_turn():
+    def __init__(self):
+        self.expired = False
+    def execute(self, agent):
+        controller_state = SimpleControllerState()
+        controller_state.boost = True
+        controller_state.steer = 1
+        return(controller_state)
+
+class drive_and_turn():
+    def __init__(self):
+        self.expired = False
+    def execute(self, agent):
+        controller_state = SimpleControllerState()
+        controller_state.throttle = True
+        controller_state.steer = 1
+        return(controller_state)

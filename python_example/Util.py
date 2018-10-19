@@ -6,11 +6,20 @@ from Utilities.LinearAlgebra import vec3
 GOAL_WIDTH = 1900
 FIELD_LENGTH = 10280
 FIELD_WIDTH = 8240
+MAX_CAR_SPEED=2300
+GRAVITY=650
+MAX_THROTTLE_SPEED=1400
+
+#evevation of objects at rest
+BALL_RADIUS=92.75
+OCTANE_ELEVATION=16.5
 
 
-
-
-
+#used to make predictions for car on ground
+def RotateVector2d(x,y,radians):
+    result = x * np.cos(radians) - y * np.sin(radians)
+    result2 = x * np.sin(radians) + y * np.cos(radians)
+    return np.round(result, 10), np.round(result2, 10)
 
 
 ''' takes in a car object, and returns an proper orthogonal orientation matrix 
@@ -37,6 +46,7 @@ def get_orientation_matrix(my_object):
 def angle2D(target, object):
     difference = to_nparray(target) - to_nparray(object)
     return np.arctan2(difference[1], difference[0])
+
 
 '''returns vertical angle between two objects in 2D(y,z) plane'''
 def angleyz(target, object):
@@ -109,21 +119,19 @@ def rand_boost():
 def flutter_boost(percent_prob):
     return(True if np.random.binomial(1, percent_prob) else False)
 
-def steer(agent):
-    distance = distance3D(agent.ball, agent.me)
-    angle = angle2D(agent.ball, agent.me)
-    if distance > 1000 and np.abs(angle) > angle_to_radians(45):
-        return 1
-    elif distance > 500:
-        return .5
-    elif distance > 400:
-        return .4
-    elif distance > 300:
-        return .3
-    elif distance > 200:
-        return .15
-    else:
-        return .1
+'''clamp from Chip'''
+def clamp(x, minimum, maximum):
+    return max(min(x,maximum), minimum)
+
+    
+
+'''https://stackoverflow.com/questions/4103405/what-is-the-algorithm-for-finding-the-center-of-a-circle-from-three-points'''
+def get_circle_center_3_pts():
+    #NOT IMPLEMENTED
+    return
+
+
+
 
 
 # ''' used to translate points before giving to renderer '''
