@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from Utilities.LinearAlgebra import vec3
+
 
 #useful values for field in unreal units
 GOAL_WIDTH = 1900

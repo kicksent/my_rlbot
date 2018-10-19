@@ -4,9 +4,9 @@
 from rlbot.agents.base_agent import BaseAgent, SimpleControllerState
 from rlbot.utils.structures.game_data_struct import GameTickPacket
 #from Utilities.Simulation import *
-from Utilities.LinearAlgebra import vec3, dot, euler_rotation
-from Utilities.Simulation import Ball, Car
-from Utilities.LinearAlgebra import vec3
+#from Utilities.LinearAlgebra import vec3, dot, euler_rotation
+#from Utilities.Simulation import Ball, Car
+#from Utilities.LinearAlgebra import vec3
 from Util import *
 from States import *
 import numpy as np
