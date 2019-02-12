@@ -16,10 +16,18 @@ OCTANE_ELEVATION=16.5
 
 
 #used to make predictions for car on ground
-def RotateVector2d(x,y,radians):
-    result = x * np.cos(radians) - y * np.sin(radians)
-    result2 = x * np.sin(radians) + y * np.cos(radians)
-    return np.round(result, 10), np.round(result2, 10)
+def RotateVector2d(vector,radians):
+    # v = np.array([x_pos, y_pos])
+    # x=0
+    # y=0
+    # new_x = v[0] + (((x - v[0]) * np.cos(radians)) - ((y - v[1]) * np.sin(radians)))
+    # new_y = v[1] + (((x - v[0]) * np.sin(radians)) + ((y - v[1]) * np.cos(radians)))
+    # res = np.array([new_x, new_y], copy=True)
+
+    x_res = vector[0] * np.cos(radians) - vector[1] * np.sin(radians)
+    y_res = vector[0] * np.sin(radians) + vector[1] * np.cos(radians)
+    res = np.array([x_res,y_res])
+    return res
 
 
 ''' takes in a car object, and returns an proper orthogonal orientation matrix 
@@ -74,7 +82,7 @@ def velocity2D(target):
 
 def normalize_vector(v):
     norm = np.linalg.norm(v)
-    return(np.array([v[0]/norm, v[1]/norm, v[2]/norm]))
+    return np.array(v/norm)
 
 ''' 
 target - accepts obj (car or ball), list, or np.array 
@@ -111,7 +119,7 @@ def sign(x):
         return 1
 
 def angle_to_radians(angle):
-    return(np.pi/180)
+    return angle * np.pi/180 
 
 def rand_boost():
     return(np.random.randint(2, dtype='bool'))

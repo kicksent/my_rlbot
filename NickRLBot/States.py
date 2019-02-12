@@ -222,14 +222,9 @@ class aerialATBA:
                 controller_state.boost = True
         elif target_speed < current_speed:
             controller_state.throttle = 0
-
-        angle_to_target = np.arctan2(agent.ball.local_location[1], agent.ball.local_location[0])
-
-
         
         if agent.me.wheel_contact == True and distance2D(agent.ball, agent.me) < 1000:
-            print(distance2D(agent.ball, agent.me))
-            controller_state.jump = True
+            controller_state.jump = False
         else:
             controller_state.boost = True
             if rotation_axis[1] < -.1:
@@ -240,9 +235,9 @@ class aerialATBA:
                 controller_state.pitch = 0
         
         if agent.me.rotation[2] < 0:
-            controller_state.roll = .1
+            controller_state.roll = .5
         elif agent.me.rotation[2] > 0:
-            controller_state.roll = -.1
+            controller_state.roll = -.5
         else:
             controller_state.roll = 0
         
@@ -290,8 +285,9 @@ class boost_and_turn():
         self.expired = False
     def execute(self, agent):
         controller_state = SimpleControllerState()
+        controller_state.throttle = True
         controller_state.boost = True
-        controller_state.steer = 1
+        controller_state.steer = -1
         return(controller_state)
 
 class drive_and_turn():

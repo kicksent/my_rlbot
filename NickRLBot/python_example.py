@@ -48,7 +48,7 @@ class kicksent(BaseAgent):
         self.game_state = GameState()
         self.ball_state = BallState()
         self.car_state = CarState()
-        self.test_num = 4 #set to 0 for no testing
+        self.test_num = 2 #set to 0 for no testing
         self.test_start = time.time()
         
     
@@ -87,7 +87,9 @@ class kicksent(BaseAgent):
         self.me.velocity = np.array([car.physics.velocity.x, car.physics.velocity.y, car.physics.velocity.z])
         self.me.acceleration = (self.me.velocity - prev_velocity ) * 60
         self.me.rotation = np.array([car.physics.rotation.pitch, car.physics.rotation.yaw, car.physics.rotation.roll])
+        prev_r_velocity = self.me.rvelocity
         self.me.rvelocity = np.array([car.physics.angular_velocity.x, car.physics.angular_velocity.y, car.physics.angular_velocity.z])
+        self.me.racceleration = self.me.rvelocity - prev_r_velocity 
         self.me.matrix = get_orientation_matrix(self.me)
         self.me.boost = car.boost
         self.me.wheel_contact = car.has_wheel_contact
@@ -151,8 +153,9 @@ class kicksent(BaseAgent):
 
     
     def render_car_prediction(self):
-        time_length = 1
+        time_length = 3
         predictions = self.car_predictor.get_car_prediction(self, time_length)
+        
         for i in range(time_length*60 - 1):
             #print(type(self.car_predictions[i]))
             self.renderer.draw_line_3d(
@@ -161,7 +164,7 @@ class kicksent(BaseAgent):
                 self.renderer.create_color(255,0,0,255)
                 
             )
-            print(i, np.linalg.norm(predictions[i].velocity))
+            #print(i, np.linalg.norm(predictions[i].velocity))
             
             
         
